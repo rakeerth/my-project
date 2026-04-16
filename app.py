@@ -3,7 +3,7 @@ import streamlit as st
 st.title("Weather App")
 
 # Input field
-city = st.text_input("Enter city name")
+city = st.text_input("Enter city name in english:")
 
 # Button
 if st.button("Get Weather"):

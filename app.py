@@ -1,14 +1,5 @@
 import streamlit as st
 
-st.set_page_config(page_title="Simple Python Web Page", page_icon="🌐")
-
-st.title("Welcome")
-st.write("This is a Simple web page created using Python.")
-
-name = st.text_input("Enter your name")
-
-if st.button("Submit"):
-    if name:
-        st.success(f"Hello, {name}! Welcome to the webpage.")
-    else:
-        st.warning("Please enter your name.")
+st.title("My Web Page")
+st.write("Hello, World!")
+st.write("This is my Streamlit webpage!")

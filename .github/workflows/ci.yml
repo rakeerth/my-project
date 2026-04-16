@@ -4,92 +4,61 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 2   # IMPORTANT for change detection
+          fetch-depth: 2  # ← IMPORTANT: fetches previous commit too
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: pip install bandit
-
-      - name: Run Python File
-        run: python app.py
-
-      - name: Run Security Scan
-        run: bandit -r . || true
-
-      - name: Get Changes
         run: |
-          if git rev-parse HEAD^ >/dev/null 2>&1; then
-            echo "CHANGES<<EOF" >> $GITHUB_ENV
-            git diff --name-status HEAD^ HEAD >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
+          python -m pip install --upgrade pip
+          pip install streamlit
+
+      - name: Detect file changes
+        id: changes
+        run: |
+          echo "Checking for changes..."
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          if [ -z "$CHANGED" ]; then
+            echo "changed_files=No specific file changes detected" >> $GITHUB_OUTPUT
           else
-            echo "CHANGES=First commit - no previous changes" >> $GITHUB_ENV
+            echo "changed_files=$CHANGED" >> $GITHUB_OUTPUT
           fi
 
-      - name: Send Email Notification
-        if: always()
-        continue-on-error: true
-        run: |
-          python - <<EOF
-          import smtplib
-          from email.mime.text import MIMEText
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USER }}
+          password: ${{ secrets.EMAIL_PASS }}
+          subject: "Repository Changes: ${{ github.event_name }} on ${{ github.ref }}"
+          to: ${{ secrets.EMAIL_USER }}
+          from: ${{ secrets.EMAIL_USER }}
+          body: |
+            Hello,
 
-          try:
-              sender = "${{ secrets.EMAIL_USER }}"
-              receiver = "${{ secrets.EMAIL_USER }}"
-              password = "${{ secrets.EMAIL_PASS }}"
+            A change was made to your repository!
 
-              raw_changes = """${{ env.CHANGES }}"""
-              message_lines = []
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+            Branch: ${{ github.ref }}
 
-              for line in raw_changes.splitlines():
-                  if not line.strip():
-                      continue
+            Files Changed:
+            ${{ steps.changes.outputs.changed_files }}
 
-                  parts = line.split("\t")
-                  if len(parts) < 2:
-                      continue
-
-                  status, file = parts
-
-                  if status == "M":
-                      message_lines.append(f"{file} was MODIFIED")
-                  elif status == "A":
-                      message_lines.append(f"{file} was ADDED")
-                  elif status == "D":
-                      message_lines.append(f"{file} was DELETED")
-                  else:
-                      message_lines.append(f"{file} was CHANGED")
-
-              final_message = "\n".join(message_lines) if message_lines else "No specific file changes detected"
-
-              msg = MIMEText(f"Repository Changes:\n\n{final_message}")
-              msg['Subject'] = "CI Alert: File Changes"
-              msg['From'] = sender
-              msg['To'] = receiver
-
-              server = smtplib.SMTP('smtp.gmail.com', 587)
-              server.starttls()
-              server.login(sender, password)
-              server.send_message(msg)
-              server.quit()
-
-              print("Email sent successfully")
-
-          except Exception as e:
-              print("Email failed:", e)
-              exit(0)
-          EOF
+            View changes: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}

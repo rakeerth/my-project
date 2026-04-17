@@ -11,4 +11,4 @@ if st.button("Get current Weather "):
         weather = f"Weather in {city}: 🌤️ 30°C, Clear Sky"
         st.success(weather)
     else:
-        st.warning("Please enter a city name")
+        st.warning("Enter a city name")

@@ -12,3 +12,4 @@ if st.button("Get current Weather "):
         st.success(weather)
     else:
         st.warning("Enter a city name")
+st.write("New feature added here!")

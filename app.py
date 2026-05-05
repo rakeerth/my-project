@@ -6,7 +6,7 @@ st.title("Weather App")
 city = st.text_input("Enter city name:")
 
 # Button
-if st.button("Get current Weather"):
+if st.button("Get current Weatherr "):
     if city:
         weather = f"Weather in {city}: 🌤️ 30°C, Clear Sky"
         st.success(weather)

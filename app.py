@@ -8,7 +8,7 @@ city = st.text_input("Enter city name:")
 # Button
 if st.button("Get current Weather "):
     if city:
-        weather = f"Weather in {city}: 🌤️ 30°C, Clear Sky"
+        weather = f"Weather in {city}: 🌤️ 30°C, Clear Skyyy"
         st.success(weather)
     else:
         st.warning("Enter a city namee in english")
